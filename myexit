@@ -1,0 +1,54 @@
+#!/bin/bash
+
+version="0.1"
+configfile="$HOME/.config/myexit.conf"
+
+if [ "$#" -gt "0" ]; then
+	for parametro in $*
+	do
+		if [ "$parametro" = "-v" ]; then
+			echo "Version: $version"
+			exit 0
+		elif [ "$parametro" = "-h" ]; then
+			echo "Usage:"
+			echo "$0 [-h|-v|<config file>]"
+			echo ""
+			echo "-h: print this help"
+			echo "-v: print version"
+			echo "<config file>: use config file specified instead of $HOME/.config/myexit.conf"
+		else
+			if [ ! -f "$parametro" ]; then
+				echo "Config file not found use -h for help"
+				exit 2
+			else
+				configfile="$parametro"
+			fi
+		fi
+	done
+fi
+
+if [ ! -f "$configfile" ]; then
+	echo "$configfile not found"
+	exit 2
+fi
+
+title=`cat $configfile | grep -v "#" | grep "title:" |sed 's/title://g' | sed "s/'//g"`
+thetext=`cat $configfile | grep -v "#" | grep "text:" |sed 's/text://g' | sed "s/'//g"`
+actions=`cat $configfile | grep -v "#" | grep "actions:" |sed 's/actions://g'`
+
+comando=$"zenity --list --hide-header --title=\"$title\" --text=\"$thetext\" --column= $actions"
+res=$(eval $comando)
+
+if [ "$res" = "" ]; then
+	exit 0
+fi
+
+todo=`cat $configfile | grep -v "#" | grep "$res:" | sed 's/'$res'://g'`
+
+if [ "$todo" = "" ]; then
+	exit 1
+fi
+
+eval $todo
+
+exit 0
